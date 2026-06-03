@@ -1,7 +1,7 @@
-# community-marketing-agent
+# social-media-agent
 
 ```text
-community-marketing-agent/
+social-media-agent/
 ├── apps/
 │   ├── web/
 │   └── api/
