@@ -1,5 +1,5 @@
-from supabase import create_client
-from apps.api.app.core import settings
+from apps.api.app.core.supabase import create_client
+from apps.api.app.core.settings import settings
 
 supabase = create_client(
     settings.SUPABASE_URL,
