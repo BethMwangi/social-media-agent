@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from apps.api.app.services.org_service import (
+from app.services.org_service import (
     OrganizationService
 )
 

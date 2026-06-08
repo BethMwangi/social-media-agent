@@ -1,8 +1,9 @@
 from fastapi import HTTPException
 
-from apps.api.app.repositories.org_repository import (
+from app.repositories.org_repository import (
     OrganizationRepository
 )
+
 
 class OrganizationService:
 
