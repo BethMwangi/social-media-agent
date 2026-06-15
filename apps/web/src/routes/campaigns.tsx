@@ -6,35 +6,83 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import { getCampaigns, type CampaignItem } from "@/services/api";
 
 export const Route = createFileRoute("/campaigns")({
   head: () => ({ meta: [{ title: "Campaigns — BuildHerAI" }] }),
+  loader: async () => {
+    try {
+      const campaigns = await getCampaigns();
+
+      return {
+        campaigns,
+        campaignsError: false,
+      };
+    } catch {
+      return {
+        campaigns: [],
+        campaignsError: true,
+      };
+    }
+  },
   component: CampaignsPage,
 });
 
-const campaigns = [
-  { name: "Women in AI Summit '26", type: "Event Promo", objective: "Awareness", status: "Active", date: "May 28, 2026" },
-  { name: "Build Week Cohort 12", type: "Recruitment", objective: "Signups", status: "Scheduled", date: "May 24, 2026" },
-  { name: "Mentor Spotlight Series", type: "Community", objective: "Engagement", status: "Draft", date: "May 20, 2026" },
-  { name: "AI Hack Night — Lagos", type: "Event Promo", objective: "Attendance", status: "Active", date: "May 18, 2026" },
-  { name: "Founder Stories Vol. 3", type: "Storytelling", objective: "Brand Lift", status: "Completed", date: "May 12, 2026" },
-  { name: "Scholarship Launch", type: "Announcement", objective: "Applications", status: "Scheduled", date: "May 09, 2026" },
-  { name: "AI Ethics Roundtable", type: "Event Promo", objective: "Attendance", status: "Draft", date: "May 02, 2026" },
-];
-
 function statusClass(status: string) {
   switch (status) {
-    case "Active": return "bg-[color-mix(in_oklab,var(--success)_18%,transparent)] text-[var(--success)]";
-    case "Scheduled": return "bg-primary-soft text-primary";
-    case "Draft": return "bg-muted text-muted-foreground";
-    case "Completed": return "bg-secondary text-secondary-foreground";
-    default: return "";
+    case "Active":
+      return "bg-[color-mix(in_oklab,var(--success)_18%,transparent)] text-[var(--success)]";
+    case "Scheduled":
+      return "bg-primary-soft text-primary";
+    case "Draft":
+      return "bg-muted text-muted-foreground";
+    case "Completed":
+      return "bg-secondary text-secondary-foreground";
+    default:
+      return "";
   }
 }
 
+function toDisplayStatus(status: string | null | undefined) {
+  if (!status) {
+    return "Unknown";
+  }
+
+  return status
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatCampaign(campaign: CampaignItem) {
+  const createdAt = new Date(campaign.created_at);
+
+  return {
+    id: campaign.id,
+    name: campaign.title,
+    type: campaign.campaign_type ?? "Uncategorized",
+    objective: campaign.objective ?? "No objective",
+    status: toDisplayStatus(campaign.status),
+    date: createdAt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    }),
+  };
+}
+
 function CampaignsPage() {
+  const { campaigns, campaignsError } = Route.useLoaderData();
+  const formattedCampaigns = campaigns.map(formatCampaign);
+
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -52,7 +100,10 @@ function CampaignsPage() {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search campaigns..." className="h-10 rounded-xl pl-9" />
+              <Input
+                placeholder="Search campaigns..."
+                className="h-10 rounded-xl pl-9"
+              />
             </div>
             <Button variant="outline" className="rounded-xl">
               <Filter className="h-4 w-4" /> Filter
@@ -69,17 +120,48 @@ function CampaignsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {campaigns.map((c) => (
-                <TableRow key={c.name} className="hover:bg-muted/40">
+              {formattedCampaigns.map((c) => (
+                <TableRow key={c.id} className="hover:bg-muted/40">
                   <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.type}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.objective}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={`rounded-full border-transparent ${statusClass(c.status)}`}>{c.status}</Badge>
+                  <TableCell className="text-muted-foreground">
+                    {c.type}
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground">{c.date}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {c.objective}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={`rounded-full border-transparent ${statusClass(c.status)}`}
+                    >
+                      {c.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {c.date}
+                  </TableCell>
                 </TableRow>
               ))}
+              {!formattedCampaigns.length && !campaignsError ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-6 text-center text-sm text-muted-foreground"
+                  >
+                    No campaigns found.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {campaignsError ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-6 text-center text-sm text-muted-foreground"
+                  >
+                    Unable to load campaigns right now.
+                  </TableCell>
+                </TableRow>
+              ) : null}
             </TableBody>
           </Table>
         </CardContent>

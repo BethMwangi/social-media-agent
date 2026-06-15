@@ -1,13 +1,449 @@
 const API_URL = "http://127.0.0.1:8000/api/v1";
 
+export type OrganizationBrandSettings = {
+  id: string;
+  organization_id: string;
+  primary_color: string | null;
+  secondary_color: string | null;
+  accent_color: string | null;
+  background_color: string | null;
+  text_color: string | null;
+  font_family: string | null;
+  logo_url: string | null;
+  tone: string | null;
+};
+
+export type OrganizationItem = {
+  id: string;
+  name: string;
+  slug: string;
+  mission: string | null;
+  purpose: string | null;
+  audience: string | null;
+  email: string | null;
+  brand_settings: OrganizationBrandSettings[];
+};
+
+export type HashtagItem = {
+  id: string;
+  organization_id: string;
+  tag: string;
+};
+
+export type AssetItem = {
+  id: string;
+  organization_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  campaign_id?: string | null;
+  file_url: string;
+  asset_type: string;
+  platform?: string | null;
+  dimensions?: string | null;
+  uploaded_by?: string | null;
+  template_category?: string | null;
+  is_template?: boolean;
+  canva_template_url?: string | null;
+  signed_file_url?: string | null;
+  created_at?: string | null;
+};
+
+export type UploadAssetPayload = {
+  organization_id: string;
+  file: File;
+  name: string;
+  description?: string;
+  asset_type?: string;
+  platform?: string;
+  dimensions?: string;
+  uploaded_by?: string;
+  template_category?: string;
+  is_template?: boolean;
+  canva_template_url?: string;
+  campaign_id?: string;
+};
+
+export type UpdateAssetPayload = Partial<
+  Pick<
+    AssetItem,
+    | "name"
+    | "description"
+    | "file_url"
+    | "asset_type"
+    | "platform"
+    | "dimensions"
+    | "uploaded_by"
+    | "template_category"
+    | "is_template"
+    | "canva_template_url"
+    | "campaign_id"
+  >
+>;
+
+export type ContentTemplateItem = {
+  id: string;
+  organization_id: string;
+  name: string;
+  platform: string;
+  template_type: string;
+  prompt_template: string;
+  created_at?: string | null;
+};
+
+export type CreateHashtagPayload = {
+  organization_id: string;
+  tag: string;
+};
+
+export type EventItem = {
+  id: string;
+  title: string;
+  event_date: string;
+  event_type: string | null;
+  location: string | null;
+  status: string | null;
+};
+
+export type CampaignItem = {
+  id: string;
+  title: string;
+  campaign_type: string | null;
+  objective: string | null;
+  status: string | null;
+  created_at: string;
+};
+
+type EventsResponse = {
+  success: boolean;
+  data: EventItem[];
+};
+
+type CampaignsResponse = {
+  success: boolean;
+  data: CampaignItem[];
+};
+
+type OrganizationResponse = {
+  success: boolean;
+  data: OrganizationItem;
+};
+
+type HashtagsResponse = {
+  success: boolean;
+  data: HashtagItem[];
+};
+
+type HashtagResponse = {
+  success: boolean;
+  data: HashtagItem;
+};
+
+type AssetsResponse = {
+  success: boolean;
+  data: AssetItem[];
+};
+
+type AssetResponse = {
+  success: boolean;
+  data: AssetItem;
+};
+
+type AssetUploadResponse = AssetResponse;
+
+type ContentTemplatesResponse = {
+  success: boolean;
+  data: ContentTemplateItem[];
+};
+
+type ContentTemplateResponse = {
+  success: boolean;
+  data: ContentTemplateItem;
+};
+
+type DeleteResponse = {
+  success: boolean;
+  message: string;
+};
+
 export async function getOrganization(slug: string) {
-  const response = await fetch(
-    `${API_URL}/organizations/${slug}`
-  );
+  const response = await fetch(`${API_URL}/organizations/${slug}`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch organization");
   }
 
-  return response.json();
+  const payload = (await response.json()) as OrganizationResponse;
+
+  return payload.data;
+}
+
+export async function getEvents() {
+  const response = await fetch(`${API_URL}/events`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch events");
+  }
+
+  const payload = (await response.json()) as EventsResponse;
+
+  return payload.data;
+}
+
+export async function getCampaigns() {
+  const response = await fetch(`${API_URL}/campaigns`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch campaigns");
+  }
+
+  const payload = (await response.json()) as CampaignsResponse;
+
+  return payload.data;
+}
+
+export async function getHashtags(organizationId: string) {
+  const response = await fetch(`${API_URL}/hashtags/${organizationId}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch hashtags");
+  }
+
+  const payload = (await response.json()) as HashtagsResponse;
+
+  return payload.data;
+}
+
+export async function createHashtag(payload: CreateHashtagPayload) {
+  const response = await fetch(`${API_URL}/hashtags`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create hashtag");
+  }
+
+  const result = (await response.json()) as HashtagResponse;
+
+  return result.data;
+}
+
+export async function getAssets() {
+  const response = await fetch(`${API_URL}/assets/`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch assets");
+  }
+
+  const payload = (await response.json()) as AssetsResponse;
+
+  return payload.data;
+}
+
+export async function getAsset(id: string) {
+  const response = await fetch(`${API_URL}/assets/${id}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch asset");
+  }
+
+  const payload = (await response.json()) as AssetResponse;
+
+  return payload.data;
+}
+
+export async function createAsset(
+  payload: Omit<AssetItem, "id" | "created_at">,
+) {
+  const response = await fetch(`${API_URL}/assets/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create asset");
+  }
+
+  const result = (await response.json()) as AssetResponse;
+
+  return result.data;
+}
+
+export async function updateAsset(id: string, payload: UpdateAssetPayload) {
+  const response = await fetch(`${API_URL}/assets/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update asset");
+  }
+
+  const result = (await response.json()) as AssetResponse;
+
+  return result.data;
+}
+
+export async function deleteAsset(id: string) {
+  const response = await fetch(`${API_URL}/assets/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete asset");
+  }
+
+  const result = (await response.json()) as DeleteResponse;
+
+  return result.message;
+}
+
+export async function uploadAsset(payload: UploadAssetPayload) {
+  const formData = new FormData();
+
+  formData.append("file", payload.file);
+  formData.append("organization_id", payload.organization_id);
+  formData.append("name", payload.name);
+
+  if (payload.description) {
+    formData.append("description", payload.description);
+  }
+
+  if (payload.asset_type) {
+    formData.append("asset_type", payload.asset_type);
+  }
+
+  if (payload.platform) {
+    formData.append("platform", payload.platform);
+  }
+
+  if (payload.dimensions) {
+    formData.append("dimensions", payload.dimensions);
+  }
+
+  if (payload.uploaded_by) {
+    formData.append("uploaded_by", payload.uploaded_by);
+  }
+
+  if (payload.template_category) {
+    formData.append("template_category", payload.template_category);
+  }
+
+  if (payload.is_template) {
+    formData.append("is_template", "true");
+  }
+
+  if (payload.canva_template_url) {
+    formData.append("canva_template_url", payload.canva_template_url);
+  }
+
+  if (payload.campaign_id) {
+    formData.append("campaign_id", payload.campaign_id);
+  }
+
+  const response = await fetch(`${API_URL}/assets/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload asset");
+  }
+
+  const result = (await response.json()) as AssetUploadResponse;
+
+  return result.data;
+}
+
+export async function getContentTemplates() {
+  const response = await fetch(`${API_URL}/content-templates/`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch content templates");
+  }
+
+  const payload = (await response.json()) as ContentTemplatesResponse;
+
+  return payload.data;
+}
+
+export async function getContentTemplate(id: string) {
+  const response = await fetch(`${API_URL}/content-templates/${id}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch content template");
+  }
+
+  const payload = (await response.json()) as ContentTemplateResponse;
+
+  return payload.data;
+}
+
+export async function createContentTemplate(
+  payload: Omit<ContentTemplateItem, "id" | "created_at">,
+) {
+  const response = await fetch(`${API_URL}/content-templates/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create content template");
+  }
+
+  const result = (await response.json()) as ContentTemplateResponse;
+
+  return result.data;
+}
+
+export async function updateContentTemplate(
+  id: string,
+  payload: Partial<
+    Pick<
+      ContentTemplateItem,
+      "name" | "platform" | "template_type" | "prompt_template"
+    >
+  >,
+) {
+  const response = await fetch(`${API_URL}/content-templates/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update content template");
+  }
+
+  const result = (await response.json()) as ContentTemplateResponse;
+
+  return result.data;
+}
+
+export async function deleteContentTemplate(id: string) {
+  const response = await fetch(`${API_URL}/content-templates/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete content template");
+  }
+
+  const result = (await response.json()) as DeleteResponse;
+
+  return result.message;
 }
