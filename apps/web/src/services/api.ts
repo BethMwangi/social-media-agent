@@ -13,6 +13,90 @@ export type OrganizationBrandSettings = {
   tone: string | null;
 };
 
+export type CampaignEventInput = {
+  title: string;
+  date: string;
+  location?: string;
+  registration_url?: string;
+  description: string;
+};
+
+export type TemplateRecommendation = {
+  asset_id: string;
+  name: string;
+  reason: string;
+  file_url?: string | null;
+};
+
+export type GenerateCampaignPayload = {
+  campaign_type: string;
+  platform: string;
+  organization_id: string;
+  selected_asset_id: string;
+  event: CampaignEventInput;
+  extra_context?: string;
+};
+
+export type GenerateCampaignResult = {
+  caption: string;
+  short_caption: string;
+  hashtags: string[];
+  call_to_action: string;
+  generation_mode: string;
+  ai_model?: string | null;
+  generation_error?: string | null;
+  design_generation_mode: string;
+  design_generation_error?: string | null;
+  generated_design_asset?: AssetItem | null;
+  template_recommendation: TemplateRecommendation;
+  generated_image_prompt: string;
+  instagram_caption: string;
+  linkedin_post: string;
+  twitter_post: string;
+  poster_instructions: string;
+  ai_reasoning: string;
+  raw_context: {
+    organization: {
+      id: string;
+      name: string;
+      mission: string | null;
+      purpose: string | null;
+      audience: string | null;
+    };
+    brand_settings: OrganizationBrandSettings | null;
+    hashtags: HashtagItem[];
+    selected_asset: AssetItem;
+  };
+};
+
+export type GeneratedPostItem = {
+  id: string;
+  campaign_id?: string | null;
+  organization_id?: string | null;
+  asset_id?: string | null;
+  template_id?: string | null;
+  platform: string;
+  content: string;
+  status: string;
+  generated_by?: string | null;
+  ai_model?: string | null;
+  approved_at?: string | null;
+  published_at?: string | null;
+  created_at: string;
+};
+
+export type CreateGeneratedPostPayload = {
+  campaign_id?: string;
+  organization_id?: string;
+  asset_id?: string;
+  template_id?: string;
+  platform: string;
+  content: string;
+  status?: string;
+  generated_by?: string;
+  ai_model?: string;
+};
+
 export type OrganizationItem = {
   id: string;
   name: string;
@@ -128,6 +212,11 @@ type OrganizationResponse = {
   data: OrganizationItem;
 };
 
+type BrandSettingsResponse = {
+  success: boolean;
+  data: OrganizationBrandSettings;
+};
+
 type HashtagsResponse = {
   success: boolean;
   data: HashtagItem[];
@@ -149,6 +238,21 @@ type AssetResponse = {
 };
 
 type AssetUploadResponse = AssetResponse;
+
+type GenerateCampaignResponse = {
+  success: boolean;
+  data: GenerateCampaignResult;
+};
+
+type GeneratedPostsResponse = {
+  success: boolean;
+  data: GeneratedPostItem[];
+};
+
+type GeneratedPostResponse = {
+  success: boolean;
+  data: GeneratedPostItem;
+};
 
 type ContentTemplatesResponse = {
   success: boolean;
@@ -173,6 +277,18 @@ export async function getOrganization(slug: string) {
   }
 
   const payload = (await response.json()) as OrganizationResponse;
+
+  return payload.data;
+}
+
+export async function getBrandSettings(organizationId: string) {
+  const response = await fetch(`${API_URL}/brand-settings/${organizationId}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch brand settings");
+  }
+
+  const payload = (await response.json()) as BrandSettingsResponse;
 
   return payload.data;
 }
@@ -386,6 +502,54 @@ export async function getContentTemplate(id: string) {
   const payload = (await response.json()) as ContentTemplateResponse;
 
   return payload.data;
+}
+
+export async function generateCampaign(payload: GenerateCampaignPayload) {
+  const response = await fetch(`${API_URL}/ai/generate-campaign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to generate campaign content");
+  }
+
+  const result = (await response.json()) as GenerateCampaignResponse;
+
+  return result.data;
+}
+
+export async function getGeneratedPosts() {
+  const response = await fetch(`${API_URL}/generated-posts`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch generated posts");
+  }
+
+  const payload = (await response.json()) as GeneratedPostsResponse;
+
+  return payload.data;
+}
+
+export async function createGeneratedPost(payload: CreateGeneratedPostPayload) {
+  const response = await fetch(`${API_URL}/generated-posts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save generated post");
+  }
+
+  const result = (await response.json()) as GeneratedPostResponse;
+
+  return result.data;
 }
 
 export async function createContentTemplate(

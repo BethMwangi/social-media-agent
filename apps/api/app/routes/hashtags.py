@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter
 
 from app.schemas.hashtag_schema import (
@@ -12,6 +14,25 @@ from app.services.hashtag_service import (
 router = APIRouter()
 
 service = HashtagService()
+
+
+@router.get("")
+async def get_hashtags_by_query(
+    organization_id: Optional[str] = None
+):
+
+    if not organization_id:
+        return {
+            "success": True,
+            "data": []
+        }
+
+    return {
+        "success": True,
+        "data": await service.get_hashtags(
+            organization_id
+        )
+    }
 
 
 @router.get("/{organization_id}")

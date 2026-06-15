@@ -46,6 +46,53 @@ class AssetService:
 
         return await self._attach_signed_url(asset)
 
+    async def create_generated_asset(
+        self,
+        organization_id: str,
+        name: str,
+        file_bytes: bytes,
+        description: Optional[str] = None,
+        platform: Optional[str] = None,
+        dimensions: Optional[str] = None,
+        uploaded_by: Optional[str] = "ai",
+        template_category: Optional[str] = None,
+        campaign_id: Optional[str] = None,
+    ):
+
+        storage_path = self._build_storage_path(
+            organization_id=organization_id,
+            name=name,
+            file_extension=".png",
+            is_template=False,
+            template_category=template_category,
+        )
+
+        file_url = await self.repository.upload_file(
+            self.BUCKET_NAME,
+            storage_path,
+            file_bytes,
+            "image/png"
+        )
+
+        asset = await self.repository.create(
+            self._build_asset_payload(
+                organization_id=organization_id,
+                name=name,
+                description=description,
+                platform=platform,
+                asset_type="image",
+                dimensions=dimensions,
+                uploaded_by=uploaded_by,
+                template_category=template_category,
+                is_template=False,
+                canva_template_url=None,
+                campaign_id=campaign_id,
+                file_url=file_url,
+            )
+        )
+
+        return await self._attach_signed_url(asset)
+
     async def upload_asset(
         self,
         organization_id: str,

@@ -13,7 +13,9 @@ from app.routes.hashtags import (
     router as hashtags_router
 )
 from app.routes.assets import router as assets_router
+from app.routes.ai import router as ai_router
 from app.routes.content_templates import router as templates_router
+from app.routes.generated_posts import router as generated_posts_router
 
 
 app = FastAPI()
@@ -64,7 +66,19 @@ app.include_router(
 )
 
 app.include_router(
+    ai_router,
+    prefix="/api/v1/ai",
+    tags=["AI"]
+)
+
+app.include_router(
     templates_router,
     prefix="/api/v1/content-templates",
     tags=["Content Templates"]
+)
+
+app.include_router(
+    generated_posts_router,
+    prefix="/api/v1/generated-posts",
+    tags=["Generated Posts"]
 )
