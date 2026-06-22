@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.ai import GenerateCampaignRequest
 from app.services.ai_service import AICampaignService
@@ -14,6 +14,19 @@ async def generate_campaign(payload: GenerateCampaignRequest):
     return {
         "success": True,
         "data": await service.generate_campaign(payload)
+    }
+
+
+@router.get("/models")
+async def list_models():
+    try:
+        data = await service.list_available_models()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "success": True,
+        "data": data,
     }
 
 

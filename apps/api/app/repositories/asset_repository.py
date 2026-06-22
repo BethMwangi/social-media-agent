@@ -84,6 +84,14 @@ class AssetRepository:
 
         return None
 
+    async def download_file(
+        self,
+        bucket_name: str,
+        storage_path: str,
+    ):
+
+        return supabase.storage.from_(bucket_name).download(storage_path)
+
     async def update(self, asset_id: str, payload: dict):
 
         response = (

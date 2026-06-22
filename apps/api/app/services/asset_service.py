@@ -1,8 +1,10 @@
+import mimetypes
 import re
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 from uuid import uuid4
+from xml.etree import ElementTree
 
 from fastapi import HTTPException
 from fastapi import UploadFile
@@ -57,12 +59,14 @@ class AssetService:
         uploaded_by: Optional[str] = "ai",
         template_category: Optional[str] = None,
         campaign_id: Optional[str] = None,
+        file_extension: str = ".png",
+        content_type: str = "image/png",
     ):
 
         storage_path = self._build_storage_path(
             organization_id=organization_id,
             name=name,
-            file_extension=".png",
+            file_extension=file_extension,
             is_template=False,
             template_category=template_category,
         )
@@ -71,7 +75,7 @@ class AssetService:
             self.BUCKET_NAME,
             storage_path,
             file_bytes,
-            "image/png"
+            content_type
         )
 
         asset = await self.repository.create(
@@ -176,6 +180,51 @@ class AssetService:
     async def delete_asset(self, asset_id):
 
         return await self.repository.delete(asset_id)
+
+    async def get_asset_content(self, asset_id: str):
+
+        asset = await self.get_asset(asset_id)
+        storage_path = self._storage_path_from_url(asset["file_url"])
+
+        if not storage_path:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset file is not available"
+            )
+
+        content = await self.repository.download_file(
+            self.BUCKET_NAME,
+            storage_path,
+        )
+
+        content_type = (
+            mimetypes.guess_type(asset["file_url"])[0]
+            or "application/octet-stream"
+        )
+
+        if content_type == "image/svg+xml":
+            content = self._sanitize_svg_bytes(content)
+
+        return {
+            "content": content,
+            "content_type": content_type,
+            "filename": Path(storage_path).name,
+        }
+
+    def _sanitize_svg_bytes(self, content: bytes) -> bytes:
+        text = content.decode("utf-8", errors="ignore")
+        sanitized = re.sub(
+            r"&(?!#\d+;|#x[0-9a-fA-F]+;|amp;|lt;|gt;|quot;|apos;)",
+            "&amp;",
+            text,
+        )
+
+        try:
+            ElementTree.fromstring(sanitized)
+        except ElementTree.ParseError:
+            return content
+
+        return sanitized.encode("utf-8")
 
     def _guess_extension(
         self,

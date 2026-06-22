@@ -75,6 +75,10 @@ export type GeneratedPostItem = {
   organization_id?: string | null;
   asset_id?: string | null;
   template_id?: string | null;
+  file_url?: string | null;
+  signed_file_url?: string | null;
+  asset_type?: string | null;
+  asset_name?: string | null;
   platform: string;
   content: string;
   status: string;
@@ -90,11 +94,25 @@ export type CreateGeneratedPostPayload = {
   organization_id?: string;
   asset_id?: string;
   template_id?: string;
+  file_url?: string;
   platform: string;
   content: string;
   status?: string;
   generated_by?: string;
   ai_model?: string;
+};
+
+export type UpdateGeneratedPostPayload = {
+  content?: string;
+  status?: string;
+  asset_id?: string;
+  file_url?: string;
+};
+
+export type RegenerateGeneratedPostDesignPayload = {
+  poster_instructions?: string;
+  generated_image_prompt?: string;
+  event_title?: string;
 };
 
 export type OrganizationItem = {
@@ -131,6 +149,34 @@ export type AssetItem = {
   signed_file_url?: string | null;
   created_at?: string | null;
 };
+
+export function isSvgAsset(asset: {
+  asset_type?: string | null;
+  file_url?: string | null;
+  signed_file_url?: string | null;
+}) {
+  const sourceUrl = asset.signed_file_url || asset.file_url || "";
+
+  return (
+    asset.asset_type === "image" &&
+    Boolean(sourceUrl) &&
+    /\.svg(?:$|\?)/i.test(sourceUrl)
+  );
+}
+
+export function getAssetContentUrl(assetId: string) {
+  return `${API_URL}/assets/${assetId}/content`;
+}
+
+export function getAssetRenderUrl(
+  asset: Pick<AssetItem, "id" | "asset_type" | "file_url" | "signed_file_url">,
+) {
+  if (isSvgAsset(asset)) {
+    return getAssetContentUrl(asset.id);
+  }
+
+  return asset.signed_file_url || asset.file_url;
+}
 
 export type UploadAssetPayload = {
   organization_id: string;
@@ -545,6 +591,65 @@ export async function createGeneratedPost(payload: CreateGeneratedPostPayload) {
 
   if (!response.ok) {
     throw new Error("Failed to save generated post");
+  }
+
+  const result = (await response.json()) as GeneratedPostResponse;
+
+  return result.data;
+}
+
+export async function updateGeneratedPost(
+  id: string,
+  payload: UpdateGeneratedPostPayload,
+) {
+  const response = await fetch(`${API_URL}/generated-posts/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update generated post");
+  }
+
+  const result = (await response.json()) as GeneratedPostResponse;
+
+  return result.data;
+}
+
+export async function approveGeneratedPost(id: string) {
+  const response = await fetch(`${API_URL}/generated-posts/${id}/approve`, {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to approve generated post");
+  }
+
+  const result = (await response.json()) as GeneratedPostResponse;
+
+  return result.data;
+}
+
+export async function regenerateGeneratedPostDesign(
+  id: string,
+  payload: RegenerateGeneratedPostDesignPayload = {},
+) {
+  const response = await fetch(
+    `${API_URL}/generated-posts/${id}/regenerate-design`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to regenerate generated post design");
   }
 
   const result = (await response.json()) as GeneratedPostResponse;

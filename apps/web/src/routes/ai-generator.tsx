@@ -18,6 +18,7 @@ import {
 import { useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { SvgViewer } from "@/components/svg-viewer";
 import {
   useAssets,
   useBrandSettings,
@@ -41,6 +42,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   createGeneratedPost,
+  getAssetRenderUrl,
+  isSvgAsset,
   type AssetItem,
   type GenerateCampaignResult,
 } from "@/services/api";
@@ -135,7 +138,11 @@ function initialEditableContent(
 }
 
 function TemplatePreview({ asset }: { asset: AssetItem }) {
-  const previewUrl = asset.signed_file_url || asset.file_url;
+  const previewUrl = getAssetRenderUrl(asset);
+
+  if (previewUrl && isSvgAsset(asset)) {
+    return <SvgViewer src={previewUrl} title={asset.name ?? "SVG preview"} />;
+  }
 
   if (asset.asset_type === "image" && previewUrl) {
     return (
@@ -186,13 +193,14 @@ function AIGeneratorPage() {
         throw new Error("No generated content available.");
       }
 
+      const draftAsset =
+        generatedResult?.generated_design_asset ?? selectedTemplate;
+
       return Promise.all([
         createGeneratedPost({
           organization_id: organizationId ?? undefined,
-          asset_id:
-            generatedResult?.generated_design_asset?.id ??
-            selectedAssetId ??
-            undefined,
+          asset_id: draftAsset?.id ?? selectedAssetId ?? undefined,
+          file_url: draftAsset?.file_url ?? undefined,
           platform: "instagram",
           content: editableContent.instagramCaption,
           status: "draft",
@@ -201,10 +209,8 @@ function AIGeneratorPage() {
         }),
         createGeneratedPost({
           organization_id: organizationId ?? undefined,
-          asset_id:
-            generatedResult?.generated_design_asset?.id ??
-            selectedAssetId ??
-            undefined,
+          asset_id: draftAsset?.id ?? selectedAssetId ?? undefined,
+          file_url: draftAsset?.file_url ?? undefined,
           platform: "linkedin",
           content: editableContent.linkedinPost,
           status: "draft",
@@ -213,10 +219,8 @@ function AIGeneratorPage() {
         }),
         createGeneratedPost({
           organization_id: organizationId ?? undefined,
-          asset_id:
-            generatedResult?.generated_design_asset?.id ??
-            selectedAssetId ??
-            undefined,
+          asset_id: draftAsset?.id ?? selectedAssetId ?? undefined,
+          file_url: draftAsset?.file_url ?? undefined,
           platform: "twitter",
           content: editableContent.twitterPost,
           status: "draft",
@@ -262,7 +266,7 @@ function AIGeneratorPage() {
   const usesAnthropic = generatedResult?.generation_mode === "anthropic";
   const generatedDesignAsset = generatedResult?.generated_design_asset ?? null;
   const designWasGenerated =
-    generatedResult?.design_generation_mode === "openai-image";
+    generatedResult?.design_generation_mode === "anthropic-svg";
 
   async function handleGenerateCampaign() {
     if (!organizationId || !selectedAssetId) {
@@ -668,14 +672,14 @@ function AIGeneratorPage() {
                     <Badge variant="outline" className="rounded-full">
                       {usesAnthropic
                         ? `AI: ${generatedResult?.ai_model || "Anthropic"}`
-                        : "AI: fallback generator"}
+                        : "AI: assisted draft"}
                     </Badge>
                     <Badge variant="outline" className="rounded-full">
                       {designWasGenerated
-                        ? "Design: OpenAI image generated"
+                        ? "Design: Claude SVG generated"
                         : generatedResult?.design_generation_mode ===
                             "not_configured"
-                          ? "Design: image AI not configured"
+                          ? "Design: Claude not configured"
                           : generatedResult?.design_generation_mode === "failed"
                             ? "Design: generation failed"
                             : "Design: template preview only"}
@@ -742,12 +746,6 @@ function AIGeneratorPage() {
                               ? "The visible design is a newly generated poster image saved in assets. You can reuse it later like any other uploaded asset."
                               : "The visible design is the existing selected template stored in assets. The generated output below is the design brief and prompt, not a newly rendered poster image."}
                           </p>
-                          {generatedResult?.generation_error ? (
-                            <p className="text-sm text-destructive">
-                              Copy AI fallback reason:{" "}
-                              {generatedResult.generation_error}
-                            </p>
-                          ) : null}
                           {generatedResult?.design_generation_error ? (
                             <p className="text-sm text-destructive">
                               {generatedResult.design_generation_error}

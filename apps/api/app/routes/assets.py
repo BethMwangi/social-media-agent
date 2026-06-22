@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, File, Form, UploadFile
+from fastapi.responses import Response
 
 from app.schemas.assets import (
     AssetCreate,
@@ -30,6 +31,22 @@ async def get_asset(asset_id: str):
         "success": True,
         "data": await service.get_asset(asset_id)
     }
+
+
+@router.get("/{asset_id}/content")
+async def get_asset_content(asset_id: str):
+
+    payload = await service.get_asset_content(asset_id)
+
+    return Response(
+        content=payload["content"],
+        media_type=payload["content_type"],
+        headers={
+            "Content-Disposition": (
+                f'inline; filename="{payload["filename"]}"'
+            )
+        },
+    )
 
 
 @router.post("/")

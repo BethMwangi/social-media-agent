@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  getAssetRenderUrl,
   getAssets,
   getOrganization,
   updateAsset,
@@ -128,7 +129,7 @@ function assetEditDefaults(asset: AssetItem) {
 
 function AssetPreview({ asset }: { asset: AssetItem }) {
   const [hasPreviewError, setHasPreviewError] = useState(false);
-  const assetUrl = asset.signed_file_url || asset.file_url;
+  const assetUrl = getAssetRenderUrl(asset);
   const Icon = iconFor(asset.asset_type);
 
   if (!assetUrl || hasPreviewError) {
@@ -706,7 +707,7 @@ function AssetsPage() {
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-3">
                   <a
-                    href={asset.signed_file_url || asset.file_url}
+                    href={getAssetRenderUrl(asset)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex text-xs font-medium text-primary hover:underline"
