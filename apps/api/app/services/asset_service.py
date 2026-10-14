@@ -192,10 +192,16 @@ class AssetService:
                 detail="Asset file is not available"
             )
 
-        content = await self.repository.download_file(
-            self.BUCKET_NAME,
-            storage_path,
-        )
+        try:
+            content = await self.repository.download_file(
+                self.BUCKET_NAME,
+                storage_path,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset file is not available"
+            ) from exc
 
         content_type = (
             mimetypes.guess_type(asset["file_url"])[0]
@@ -360,11 +366,14 @@ class AssetService:
         if not storage_path:
             return asset
 
-        signed_file_url = await self.repository.create_signed_url(
-            self.BUCKET_NAME,
-            storage_path,
-            self.SIGNED_URL_TTL_SECONDS
-        )
+        try:
+            signed_file_url = await self.repository.create_signed_url(
+                self.BUCKET_NAME,
+                storage_path,
+                self.SIGNED_URL_TTL_SECONDS
+            )
+        except Exception:
+            return asset
 
         return {
             **asset,

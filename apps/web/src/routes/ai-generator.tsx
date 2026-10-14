@@ -458,7 +458,7 @@ function AIGeneratorPage() {
                     id="campaign-location"
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
-                    placeholder="Lagos, Nigeria"
+                    placeholder="Nairobi, Kenya"
                     className="rounded-xl"
                   />
                 </div>
@@ -918,7 +918,7 @@ function AIGeneratorPage() {
               </Button>
             ) : step === 2 ? (
               <Button
-                className="rounded-xl bg-(--gradient-primary) shadow-(--shadow-glow) hover:opacity-95"
+                className="rounded-xl bg-gradient-primary shadow-(--shadow-glow) hover:opacity-95"
                 onClick={handleGenerateCampaign}
                 disabled={generateCampaignMutation.isPending || !canGenerate}
               >

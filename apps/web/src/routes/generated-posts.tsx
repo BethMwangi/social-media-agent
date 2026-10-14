@@ -16,6 +16,12 @@ import { SvgViewer } from "@/components/svg-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
   approveGeneratedPost,
@@ -117,6 +123,7 @@ function GeneratedPostCard({
   const Icon = meta.icon;
   const status = formatStatus(post.status);
   const [isEditing, setIsEditing] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [draftContent, setDraftContent] = useState(post.content);
   const previewUrl =
     post.asset_id && post.file_url && post.asset_type
@@ -151,7 +158,11 @@ function GeneratedPostCard({
           </Badge>
         </div>
         {previewUrl ? (
-          <div className="mt-4 overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            className="mt-4 block w-full cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-muted/30 text-left transition-opacity hover:opacity-90"
+          >
             {isSvgAsset({
               asset_type: post.asset_type,
               file_url: post.file_url,
@@ -170,7 +181,38 @@ function GeneratedPostCard({
                 className="h-56 w-full object-cover"
               />
             )}
-          </div>
+          </button>
+        ) : null}
+        {previewUrl ? (
+          <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {post.asset_name || `${meta.label} generated design`}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="max-h-[75vh] overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+                {isSvgAsset({
+                  asset_type: post.asset_type,
+                  file_url: post.file_url,
+                  signed_file_url: post.signed_file_url,
+                }) ? (
+                  <div className="h-[70vh] w-full">
+                    <SvgViewer
+                      src={previewUrl}
+                      title={post.asset_name || "Generated design preview"}
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={previewUrl}
+                    alt={post.asset_name || "Generated design preview"}
+                    className="max-h-[70vh] w-full object-contain"
+                  />
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         ) : null}
         {isEditing ? (
           <div className="mt-4 space-y-3">

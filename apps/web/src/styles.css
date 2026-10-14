@@ -65,6 +65,21 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * --gradient-primary/--gradient-soft hold `linear-gradient(...)` values, which
+ * are only valid as `background-image`. The `bg-[var(--gradient-primary)]`
+ * utility generates `background-color`, which silently drops the declaration
+ * (invalid value), leaving the element transparent. These utilities apply the
+ * vars to the correct property instead.
+ */
+@utility bg-gradient-primary {
+  background-image: var(--gradient-primary);
+}
+
+@utility bg-gradient-soft {
+  background-image: var(--gradient-soft);
+}
+
 :root {
   --radius: 0.625rem;
   /* BuildHerAI Labs brand */
