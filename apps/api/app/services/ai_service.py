@@ -306,7 +306,7 @@ class AICampaignService:
         prompt = self._build_design_prompt(context, generated)
         payload, _ = self._request_anthropic_message(
             prompt=prompt,
-            max_tokens=6000,
+            max_tokens=8192,
             temperature=0.4,
             error_prefix="Anthropic poster generation failed",
             models=self._design_models(),
@@ -907,6 +907,10 @@ class AICampaignService:
             Use only inline SVG elements, gradients, shapes, and text.
             If you need a font, set font-family directly on text elements.
             Escape ampersands as &amp; in any text or CSS content.
+            Keep the markup efficient: a handful of shapes and gradients is
+            enough. Do not add large numbers of small decorative elements
+            (e.g. dozens of individual confetti/dot/polygon shapes) since
+            the output must fit within a limited response length.
 
             Organization: {organization.get('name')}
                         Mission:
