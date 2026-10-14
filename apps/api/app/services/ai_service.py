@@ -26,9 +26,10 @@ class AICampaignService:
         "claude-opus-4-8",
     ]
     DEFAULT_DESIGN_MODELS = [
-        "claude-haiku-4-5-20251001",
-        "claude-sonnet-4-5-20250929",
         "claude-sonnet-4-6",
+        "claude-opus-4-8",
+        "claude-sonnet-4-5-20250929",
+        "claude-haiku-4-5-20251001",
     ]
     MODEL_ALIASES = {
         "haiku": [
@@ -280,7 +281,7 @@ class AICampaignService:
         prompt = self._build_prompt(context)
         payload, model = self._request_anthropic_message(
             prompt=prompt,
-            max_tokens=1400,
+            max_tokens=4096,
             temperature=0.7,
             error_prefix="Anthropic generation failed",
             models=self._text_models(),
@@ -305,7 +306,7 @@ class AICampaignService:
         prompt = self._build_design_prompt(context, generated)
         payload, _ = self._request_anthropic_message(
             prompt=prompt,
-            max_tokens=2400,
+            max_tokens=8192,
             temperature=0.4,
             error_prefix="Anthropic poster generation failed",
             models=self._design_models(),
@@ -891,6 +892,10 @@ class AICampaignService:
             event.get("registration_url")
             or "Include a call to register"
         )
+        extra_context_message = (
+            request.get("extra_context")
+            or "None provided"
+        )
 
         return dedent(
             f"""
@@ -902,6 +907,10 @@ class AICampaignService:
             Use only inline SVG elements, gradients, shapes, and text.
             If you need a font, set font-family directly on text elements.
             Escape ampersands as &amp; in any text or CSS content.
+            Keep the markup efficient: a handful of shapes and gradients is
+            enough. Do not add large numbers of small decorative elements
+            (e.g. dozens of individual confetti/dot/polygon shapes) since
+            the output must fit within a limited response length.
 
             Organization: {organization.get('name')}
                         Mission:
@@ -916,6 +925,8 @@ class AICampaignService:
                         Registration URL:
             {registration_message}
             Event description: {event.get('description')}
+            Additional creative direction from the requester:
+            {extra_context_message}
 
                         Use the selected template only as visual inspiration,
                         not as a final output:

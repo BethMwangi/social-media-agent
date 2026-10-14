@@ -174,7 +174,7 @@ function Index() {
             </Button>
             <Button
               asChild
-              className="rounded-xl bg-[var(--gradient-primary)] shadow-[var(--shadow-glow)] hover:opacity-95"
+              className="rounded-xl bg-gradient-primary shadow-[var(--shadow-glow)] hover:opacity-95"
             >
               <Link to="/ai-generator">
                 <Sparkles className="h-4 w-4" /> Generate Content
